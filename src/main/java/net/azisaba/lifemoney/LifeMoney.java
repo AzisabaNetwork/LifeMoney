@@ -23,6 +23,7 @@ public final class LifeMoney extends JavaPlugin implements Task {
     public void onEnable() {
         saveDefaultConfig();
         coinTimer = new CoinLogTimer(this);
+        coinTimer.start();
 
         if (isEconomy()) {
             RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
