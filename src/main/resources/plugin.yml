@@ -1,0 +1,11 @@
+name: LifeMoney
+version: '1.0.0'
+main: net.azisaba.lifemoney.LifeMoney
+api-version: '1.21'
+authors: [ MCLove32 ]
+description: LifeNewPvEの通貨の中枢。
+
+depend:
+  - Vault
+softdepend:
+  - MythicMobs
