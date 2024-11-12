@@ -12,12 +12,6 @@ public interface Worlds {
         return new HashSet<>();
     }
 
-    void addEnabledWorld();
-
-    default void removeEnabledWorld(String world) {
-        getEnabledWorlds().remove(world);
-    }
-
     default boolean isEnabledWorld(String world) {
         return getEnabledWorlds().contains(world);
     }

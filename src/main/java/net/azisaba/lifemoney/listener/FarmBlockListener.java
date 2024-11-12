@@ -70,17 +70,17 @@ public class FarmBlockListener implements Listener {
         }
 
         @Override
-        public void addEnabledWorld() {
+        public Set<String> getEnabledWorlds() {
+            Set<String> worlds = new HashSet<>();
             for (World world : Bukkit.getWorlds()) {
                 if (world == null) continue;
-                if (isEnabledWorld(world.getName())) continue;
                 if (world.getName().contains("resource")) {
-                    getEnabledWorlds().add(world.getName());
-
+                    worlds.add(world.getName());
                 } else if (world.getName().contains("farm")) {
-                    getEnabledWorlds().add(world.getName());
+                    worlds.add(world.getName());
                 }
             }
+            return worlds;
         }
 
         @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
