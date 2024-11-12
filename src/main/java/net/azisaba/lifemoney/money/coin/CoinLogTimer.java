@@ -26,11 +26,15 @@ public final class CoinLogTimer implements ICoinLogTimer {
     @Override
     public void start() {
         plugin.runAsyncTimer(()-> {
+            int delay = 1;
             for (UUID uuid : coinData.keySet()) {
-                double total = new DBCon().setLogsCoin(uuid, new ArrayList<>(coinData.get(uuid).stream().toList()));
-                Player p = Bukkit.getPlayer(uuid);
-                if (p == null) continue;
-                p.sendMessage(Component.text("§5分の間に §a§l<COIN>コイン §fを獲得しました。".replaceAll("<COIN>", total + "")));
+                plugin.runAsyncDelayed(()-> {
+                    double total = new DBCon().setLogsCoin(uuid, new ArrayList<>(coinData.get(uuid).stream().toList()));
+                    Player p = Bukkit.getPlayer(uuid);
+                    if (p == null) return;
+                    p.sendMessage(Component.text("§5分の間に §a§l<COIN>コイン §fを獲得しました。".replaceAll("<COIN>", total + "")));
+                }, delay);
+                delay++;
             }
 
         }, 6000, 6000);
