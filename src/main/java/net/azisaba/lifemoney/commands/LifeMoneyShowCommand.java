@@ -18,131 +18,115 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Stream;
 
 public class LifeMoneyShowCommand implements TabExecutor {
 
     @Override
-    public boolean onCommand(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String s, @NotNull String[] strings) {
-        if (strings.length == 0) {
+    public boolean onCommand(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
+        if (args.length == 0) {
             return finish(commandSender, "§c/lms [-p <プレイヤー名>] [-d <確認する時間の範囲>] [-m <お金のタイプ>]");
         }
         UUID uuid = null;
         long time = -1;
         Moneys money = null;
 
-        for (int i = 1; i < strings.length; i++) {
-            if (strings.length % 2 != 0) {
+        for (int i = 0; i < args.length; i++) {
+            if (args.length % 2 != 0) {
                 return finish(commandSender, "§c/lms [-p <プレイヤー名>] [-d <確認する時間の範囲>] [-m <お金のタイプ>]");
             }
-
-            if (strings[i - 1].equalsIgnoreCase("-p")) {
-                OfflinePlayer p = Bukkit.getOfflinePlayer(strings[i]);
-                uuid = p.getUniqueId();
-            }
-            if (strings[i - 1].equalsIgnoreCase("-d")) {
-
-                String timeStr = strings[i];
-                if (!timeStr.isEmpty() && !timeStr.isBlank() || !timeStr.contains("-") || !timeStr.contains(".") || !timeStr.startsWith("0")) {
-                    timeStr = timeStr.toLowerCase();
-                    try {
-                        long time1 = Long.parseLong(timeStr.substring(0, timeStr.length() - 1));
-                        if (timeStr.endsWith("s")) {
-                            time = time1;
-                        } else if (timeStr.endsWith("m")) {
-                            time = time1;
-                            time *= 60L;
-                        } else if (timeStr.endsWith("h")) {
-                            time = time1;
-                            time *= 3600L;
-                        } else if (timeStr.endsWith("d")) {
-                            time = time1;
-                            time *= 86400L;
-                        } else if (timeStr.endsWith("w")) {
-                            time = time1;
-                            time *= 604800L;
-                        } else if (timeStr.endsWith("y") && timeStr.length() < 4) {
-                            time = time1;
-                            time *= 31536000L;
-                        }
-                    } catch (NumberFormatException e) {
-                        return finish(commandSender, "§c無効な時間指定です。");
-                    }
-                } else {
-                    return finish(commandSender, "§c無効な時間指定です。");
-                }
-            }
-            if (strings[i - 1].equalsIgnoreCase("-m")) {
-                try {
-                    money = Moneys.valueOf(strings[i].toUpperCase());
-                } catch (IllegalArgumentException e) {
-                    return finish(commandSender, "§c無効な<money-type>です。");
-                }
+            switch (args[i].toLowerCase()) {
+                case "-p" -> uuid = Bukkit.getOfflinePlayer(args[++i]).getUniqueId();
+                case "-d" -> time = convertTime(args[++i]);
+                case "-m" -> money = parseMoneyType(args[++i]);
             }
         }
 
-        commandSender.sendMessage(Component.text("§7処理中です..."));
-        UUID finalUuid = uuid;
-        long finalTime = time;
+        if (uuid == null && time == -1 && money == null) {
+            return finish(commandSender, "§c/lms [-p <プレイヤー名>] [-d <確認する時間の範囲>] [-m <お金のタイプ>]");
+        }
+
+        processCommand(commandSender, uuid, time, money);
+        return true;
+    }
+
+    private long convertTime(@NotNull String timeStr) {
+        try {
+            long time = Long.parseLong(timeStr.substring(0, timeStr.length() - 1));
+            return switch (timeStr.charAt(timeStr.length() - 1)) {
+                case 's' -> time;
+                case 'm' -> time * 60L;
+                case 'h' -> time * 3600L;
+                case 'd' -> time * 86400L;
+                case 'w' -> time * 604800L;
+                case 'y' -> time * 31536000L;
+                default -> throw new NumberFormatException();
+            };
+        } catch (NumberFormatException e) {
+            return -1;
+        }
+    }
+
+    @Nullable
+    private Moneys parseMoneyType(@NotNull String type) {
+        try {
+            return Moneys.valueOf(type.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    private void processCommand(CommandSender sender, UUID uuid, long time, Moneys money) {
         AtomicReference<List<CoinLog>> list = new AtomicReference<>(new ArrayList<>());
         if (uuid != null) {
-
-            AtomicBoolean end = new AtomicBoolean(false);
-            Set<Moneys> set;
-            long epochSecond = Instant.now().getEpochSecond();
-            if (money != null) {
-                list.set(new ArrayList<>(Collections.singleton(new CoinLog(money, 0D, epochSecond))));
-                set = new HashSet<>(Set.of(money));
-            } else {
-                list.set(new ArrayList<>(Arrays.stream(Moneys.values()).map((m -> new CoinLog(m, 0D, epochSecond))).toList()));
-                set = new HashSet<>(Arrays.stream(Moneys.values()).toList());
-            }
-            Set<Moneys> finalSet = set;
-            LifeMoney.getInstance().runAsyncDelayed(() -> {
-                list.set(new DBCon().getLogsCoin(finalUuid, list.get(), epochSecond, finalTime, finalSet));
-                list.set(merge(list.get()));
-                end.set(true);
-                message(commandSender, list.get(), finalUuid);
-            }, 1);
-            LifeMoney.getInstance().runAsyncDelayed(()-> {
-                if (end.get()) return;
-                finish(commandSender, "§cデータがありません。");
-            }, 100);
-            return true;
-
+            processCommandForSingleUser(sender, uuid, time, money, list);
         } else {
-            Moneys finalMoney = money;
-            LifeMoney.getInstance().runAsync(() -> {
-                Set<UUID> uuids = new DBCon().getUUIDs();
-                if (uuids.isEmpty()) {
-                    finish(commandSender, "§cデータがありません。");
-                    return;
-                }
+            processCommandForAllUsers(sender, time, money, list);
+        }
+    }
 
-                long epochSecond = Instant.now().getEpochSecond();
-                if (finalMoney != null) {
+    private void processCommandForSingleUser(@NotNull CommandSender sender, UUID uuid, long time, Moneys money, @NotNull AtomicReference<List<CoinLog>> list) {
+        sender.sendMessage(Component.text("§7処理中です..."));
+        AtomicBoolean end = new AtomicBoolean(false);
+        Set<Moneys> set = (money != null) ? Set.of(money) : new HashSet<>(Set.of(Moneys.values()));
+        long epochSecond = Instant.now().getEpochSecond();
 
-                    Set<Moneys> set = new HashSet<>(Set.of(finalMoney));
-                    list.set(Stream.of(new CoinLog(finalMoney, 0D, epochSecond)).toList());
-                    uuids.forEach(it -> list.set(new DBCon().getLogsCoin(it, list.get(), epochSecond, finalTime, set)));
-                    LifeMoney.getInstance().runAsyncDelayed(() -> {
-                        list.set(merge(list.get()));
-                        list.get().forEach(it -> commandSender.sendMessage(Component.text("§a§l全体の金額詳細ログ: " + "§e§l" + it.moneys().name() + "§f -> §b§l" + it.coin() + "LM")));
-                        }, 20L);
+        list.set(createInitialCoinLogList(money, epochSecond));
+        LifeMoney.getInstance().runAsyncDelayed(() -> {
+            list.set(new DBCon().getLogsCoin(uuid, list.get(), epochSecond, time, set));
+            list.set(merge(list.get()));
+            end.set(true);
+            message(sender, list.get(), uuid);
+        }, 1);
 
-                } else {
+        LifeMoney.getInstance().runAsyncDelayed(() -> {
+            if (!end.get()) finish(sender, "§cデータがありません。");
+        }, 100);
+    }
 
-                    Set<Moneys> set = new HashSet<>(Arrays.stream(Moneys.values()).toList());
-                    list.set(Arrays.stream(Moneys.values()).map((m -> new CoinLog(m, 0D, epochSecond))).toList());
-                    uuids.forEach(it -> list.set(new DBCon().getLogsCoin(it, list.get(), epochSecond, finalTime, set)));
-                    LifeMoney.getInstance().runAsyncDelayed(() -> {
-                        list.set(merge(list.get()));
-                        list.get().forEach(it -> commandSender.sendMessage(Component.text("§a§l全体の金額詳細ログ: " + "§e§l" + it.moneys().name() + "§f -> §b§l" + it.coin() + "LM")));
-                    }, 100L);
-                }
-            });
-            return true;
+    private void processCommandForAllUsers(CommandSender sender, long time, Moneys money, AtomicReference<List<CoinLog>> list) {
+        LifeMoney.getInstance().runAsync(() -> {
+            Set<UUID> uuids = new DBCon().getUUIDs();
+            if (uuids.isEmpty()) {
+                finish(sender, "§cデータがありません。");
+                return;
+            }
+            long epochSecond = Instant.now().getEpochSecond();
+            Set<Moneys> set = (money != null) ? Set.of(money) : new HashSet<>(Set.of(Moneys.values()));
 
+            list.set(createInitialCoinLogList(money, epochSecond));
+            uuids.forEach(it -> list.set(new DBCon().getLogsCoin(it, list.get(), epochSecond, time, set)));
+            LifeMoney.getInstance().runAsyncDelayed(() -> {
+                list.set(merge(list.get()));
+                list.get().forEach(it -> sender.sendMessage(Component.text("§a§l全体の金額詳細ログ: §e§l" + it.moneys().name() + "§f -> §b§l" + it.coin() + "LM")));
+            }, 20L);
+        });
+    }
+
+    private List<CoinLog> createInitialCoinLogList(Moneys money, long epochSecond) {
+        if (money != null) {
+            return new ArrayList<>(Collections.singleton(new CoinLog(money, 0D, epochSecond)));
+        } else {
+            return Arrays.stream(Moneys.values()).map(m -> new CoinLog(m, 0D, epochSecond)).toList();
         }
     }
 
@@ -154,8 +138,8 @@ public class LifeMoneyShowCommand implements TabExecutor {
         return map.entrySet().stream().map(it -> new CoinLog(it.getKey(), it.getValue(), 0)).toList();
     }
 
-    private boolean finish(@NotNull CommandSender sender, String... message) {
-        Arrays.stream(message).forEach(it ->
+    private boolean finish(@NotNull CommandSender sender, String... messages) {
+        Arrays.stream(messages).forEach(it ->
                 sender.sendMessage(Component.text(it)));
         return false;
     }
@@ -167,7 +151,7 @@ public class LifeMoneyShowCommand implements TabExecutor {
         }
         list.forEach(it -> {
             OfflinePlayer p = Bukkit.getOfflinePlayer(uuid);
-            String name = p.getName() == null ? "§a§l" + p.getUniqueId() + "§fの金額詳細ログ: " :  "§a§l" + p.getName() + "§fの金額詳細ログ: ";
+            String name = (p.getName() == null ? "§a§l" + p.getUniqueId() : "§a§l" + p.getName()) + "§fの金額詳細ログ: ";
             sender.sendMessage(Component.text(name + "§e§l" + it.moneys().name() + "§f -> §b§l" + it.coin() + "LM"));
         });
     }
@@ -175,29 +159,36 @@ public class LifeMoneyShowCommand implements TabExecutor {
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String s, @NotNull String[] strings) {
         if (!(commandSender instanceof Player)) return null;
-        if (strings.length == 0) return List.of("/lms -p <プレイヤー名> -d <確認する時間の範囲> -m <お金のタイプ>");
-        if (strings.length == 1 || strings.length == 3 || strings.length == 5) {
-            return List.of("-p", "-d", "-m");
-        }
 
-        int i = strings.length - 1;
-        switch (strings[i - 1]) {
-            case "-p" -> {
-                if (strings[i].isEmpty()) {
-                    return Bukkit.getOnlinePlayers().stream().map(Player::getName).toList();
-                }
-                return Bukkit.getOnlinePlayers().stream().map(Player::getName).filter(name -> name.toLowerCase().startsWith(strings[i].toLowerCase())).toList();
-            }
-            case "-d" -> {
-                return List.of("6s", "5m", "4h", "3d", "2w", "1y");
-            }
-            case "-m" -> {
-                if (strings[i].isEmpty()) {
-                    return Arrays.stream(Moneys.values()).map(Moneys::name).toList();
-                }
-                return Arrays.stream(Moneys.values()).map(Moneys::name).filter(name -> name.toLowerCase().startsWith(strings[i].toLowerCase())).toList();
-            }
-        }
-        return null;
+        final String INITIAL_COMMAND = "/lms -p <プレイヤー名> -d <確認する時間の範囲> -m <お金のタイプ>";
+        final List<String> COMMAND_OPTIONS = List.of("-p", "-d", "-m");
+
+        if (strings.length == 0) return List.of(INITIAL_COMMAND);
+        if (strings.length % 2 == 1) return COMMAND_OPTIONS;
+
+        int lastIndex = strings.length - 1;
+        String lastArgument = strings[lastIndex - 1];
+        String currentInput = strings[lastIndex];
+
+        return switch (lastArgument) {
+            case "-p" -> getMatchingOnlinePlayers(currentInput);
+            case "-d" -> List.of("6s", "5m", "4h", "3d", "2w", "1y");
+            case "-m" -> getMatchingMoneys(currentInput);
+            default -> null;
+        };
+    }
+
+    private List<String> getMatchingOnlinePlayers(String currentInput) {
+        return Bukkit.getOnlinePlayers().stream()
+                .map(Player::getName)
+                .filter(name -> name.toLowerCase().startsWith(currentInput.toLowerCase()))
+                .toList();
+    }
+
+    private List<String> getMatchingMoneys(String currentInput) {
+        return Arrays.stream(Moneys.values())
+                .map(Moneys::name)
+                .filter(name -> name.toLowerCase().startsWith(currentInput.toLowerCase()))
+                .toList();
     }
 }
