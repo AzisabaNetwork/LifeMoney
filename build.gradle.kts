@@ -25,7 +25,7 @@ dependencies {
 }
 
 group = "net.azisaba"
-version = "1.2.0"
+version = "1.3.0"
 description = "LifeMoney"
 java.sourceCompatibility = JavaVersion.VERSION_21
 
