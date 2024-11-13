@@ -17,8 +17,8 @@ import org.jetbrains.annotations.Nullable;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Stream;
 
 public class LifeMoneyShowCommand implements TabExecutor {
 
@@ -88,29 +88,27 @@ public class LifeMoneyShowCommand implements TabExecutor {
         if (uuid != null) {
 
             AtomicBoolean end = new AtomicBoolean(false);
+            Set<Moneys> set;
             long epochSecond = Instant.now().getEpochSecond();
             if (money != null) {
                 list.set(new ArrayList<>(Collections.singleton(new CoinLog(money, 0D, epochSecond))));
-                LifeMoney.getInstance().runAsyncDelayed(() -> {
-                    list.set(new DBCon().getLogsCoin(finalUuid, list.get(), epochSecond, finalTime));
-                    list.set(merge(list.get()));
-                    end.set(true);
-                    message(commandSender, list.get(), finalUuid);
-                }, 1);
-                return true;
+                set = new HashSet<>(Set.of(money));
             } else {
                 list.set(new ArrayList<>(Arrays.stream(Moneys.values()).map((m -> new CoinLog(m, 0D, epochSecond))).toList()));
-                LifeMoney.getInstance().runAsyncDelayed(() -> {
-                    list.set(new DBCon().getLogsCoin(finalUuid, list.get(), epochSecond, finalTime));
-                    list.set(merge(list.get()));
-                    end.set(true);
-                    message(commandSender, list.get(), finalUuid);
-                }, 1);
+                set = new HashSet<>(Arrays.stream(Moneys.values()).toList());
             }
+            Set<Moneys> finalSet = set;
+            LifeMoney.getInstance().runAsyncDelayed(() -> {
+                list.set(new DBCon().getLogsCoin(finalUuid, list.get(), epochSecond, finalTime, finalSet));
+                list.set(merge(list.get()));
+                end.set(true);
+                message(commandSender, list.get(), finalUuid);
+            }, 1);
             LifeMoney.getInstance().runAsyncDelayed(()-> {
                 if (end.get()) return;
                 finish(commandSender, "§cデータがありません。");
             }, 100);
+            return true;
 
         } else {
             Moneys finalMoney = money;
@@ -124,24 +122,28 @@ public class LifeMoneyShowCommand implements TabExecutor {
                 long epochSecond = Instant.now().getEpochSecond();
                 if (finalMoney != null) {
 
-                    list.set(new ArrayList<>(Collections.singleton(new CoinLog(finalMoney, 0D, epochSecond))));
-                    uuids.forEach(it -> list.set(new DBCon().getLogsCoin(it, list.get(), epochSecond, finalTime)));
-                    list.set(merge(list.get()));
-                    LifeMoney.getInstance().runAsyncDelayed(() ->
-                            list.get().forEach(it -> commandSender.sendMessage(Component.text("§a§l全体の金額詳細ログ: " + "§e§l" + it.moneys().name() + "§f -> §b§l" + it.coin() + "コイン"))),  + 20L);
+                    Set<Moneys> set = new HashSet<>(Set.of(finalMoney));
+                    list.set(Stream.of(new CoinLog(finalMoney, 0D, epochSecond)).toList());
+                    uuids.forEach(it -> list.set(new DBCon().getLogsCoin(it, list.get(), epochSecond, finalTime, set)));
+                    LifeMoney.getInstance().runAsyncDelayed(() -> {
+                        list.set(merge(list.get()));
+                        list.get().forEach(it -> commandSender.sendMessage(Component.text("§a§l全体の金額詳細ログ: " + "§e§l" + it.moneys().name() + "§f -> §b§l" + it.coin() + "LM")));
+                        }, 20L);
 
                 } else {
 
-                    list.set(new ArrayList<>(Arrays.stream(Moneys.values()).map((m -> new CoinLog(m, 0D, epochSecond))).toList()));
-                    uuids.forEach(it -> list.set(new DBCon().getLogsCoin(it, list.get(), epochSecond, finalTime)));
-                    list.set(merge(list.get()));
-                    LifeMoney.getInstance().runAsyncDelayed(() ->
-                            list.get().forEach(it -> commandSender.sendMessage(Component.text("§a§l全体の金額詳細ログ: " + "§e§l" + it.moneys().name() + "§f -> §b§l" + it.coin() + "コイン"))), 100L);
+                    Set<Moneys> set = new HashSet<>(Arrays.stream(Moneys.values()).toList());
+                    list.set(Arrays.stream(Moneys.values()).map((m -> new CoinLog(m, 0D, epochSecond))).toList());
+                    uuids.forEach(it -> list.set(new DBCon().getLogsCoin(it, list.get(), epochSecond, finalTime, set)));
+                    LifeMoney.getInstance().runAsyncDelayed(() -> {
+                        list.set(merge(list.get()));
+                        list.get().forEach(it -> commandSender.sendMessage(Component.text("§a§l全体の金額詳細ログ: " + "§e§l" + it.moneys().name() + "§f -> §b§l" + it.coin() + "LM")));
+                    }, 100L);
                 }
             });
+            return true;
 
         }
-        return false;
     }
 
     private List<CoinLog> merge(@NotNull List<CoinLog> list1) {
@@ -149,12 +151,7 @@ public class LifeMoneyShowCommand implements TabExecutor {
         for (CoinLog log : list1) {
             map.merge(log.moneys(), log.coin(), Double::sum);
         }
-        AtomicInteger i = new AtomicInteger(0);
-        return map.entrySet().stream().map(it -> {
-                    i.set(i.get() + 1);
-                    return new CoinLog(it.getKey(), it.getValue(), i.get());
-                }
-        ).toList();
+        return map.entrySet().stream().map(it -> new CoinLog(it.getKey(), it.getValue(), 0)).toList();
     }
 
     private boolean finish(@NotNull CommandSender sender, String... message) {
@@ -171,7 +168,7 @@ public class LifeMoneyShowCommand implements TabExecutor {
         list.forEach(it -> {
             OfflinePlayer p = Bukkit.getOfflinePlayer(uuid);
             String name = p.getName() == null ? "§a§l" + p.getUniqueId() + "§fの金額詳細ログ: " :  "§a§l" + p.getName() + "§fの金額詳細ログ: ";
-            sender.sendMessage(Component.text(name + "§e§l" + it.moneys().name() + "§f -> §b§l" + it.coin() + "コイン"));
+            sender.sendMessage(Component.text(name + "§e§l" + it.moneys().name() + "§f -> §b§l" + it.coin() + "LM"));
         });
     }
 

@@ -143,7 +143,7 @@ public class DBCon {
         }
     }
 
-    public List<CoinLog> getLogsCoin(@NotNull UUID uuid, List<CoinLog> logList, long timeCondition, long range) {
+    public List<CoinLog> getLogsCoin(@NotNull UUID uuid, List<CoinLog> logList, long timeCondition, long range, Set<Moneys> contains) {
         try {
             try (Connection con = dataSource.getConnection()) {
                 try (PreparedStatement state = con.prepareStatement("SELECT * FROM " + LOGS_COIN + " WHERE uuid = ?;")) {
@@ -156,14 +156,14 @@ public class DBCon {
                         double coin = rs.getDouble("money");
                         long time = rs.getLong("time");
 
-                        logList.forEach(it -> {
-                            if (it.moneys() != Moneys.getFromName(type)) return;
-                            if (range != -1) {
-                                if (timeCondition - time > range) return;
-                            }
-                            list.add(new CoinLog(Moneys.getFromName(type), coin, time));
-                        });
+                        if (!contains.contains(Moneys.getFromName(type))) continue;
+                        if (range != -1) {
+                            if (timeCondition - time > range) continue;
+                        }
+                        list.add(new CoinLog(Moneys.getFromName(type), coin, time));
+
                     }
+                    list.addAll(logList);
                     return list;
                 }
             }
@@ -177,6 +177,18 @@ public class DBCon {
             try (Connection con = dataSource.getConnection()) {
                 try (PreparedStatement state = con.prepareStatement("DELETE FROM " + LOGS_COIN + " WHERE uuid = ?;")) {
                     state.setString(1, uuid.toString());
+                    state.executeUpdate();
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void clearLogCoin() {
+        try {
+            try (Connection con = dataSource.getConnection()) {
+                try (PreparedStatement state = con.prepareStatement("DELETE FROM " + LOGS_COIN + ";")) {
                     state.executeUpdate();
                 }
             }

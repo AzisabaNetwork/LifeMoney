@@ -102,7 +102,7 @@ public class FarmBlockListener implements Listener {
         }
 
         @Override
-        public void rewardPlayer(Player player, Material blockType) {
+        public void rewardPlayer(@NotNull Player player, Material blockType) {
             double coinAmount = getCoinByMaterial(0, blockType);
             Coin.addCoin(player.getUniqueId(), Moneys.FARM, coinAmount);
         }
