@@ -15,10 +15,12 @@ public class DBCon {
 
     protected static HikariDataSource dataSource;
     protected static String LOGS_COIN;
+    protected static String OPTIONS;
 
     public void initialize(@NotNull LifeMoney plugin) {
         if (!plugin.getConfig().getBoolean("Database.use", false)) return;
         LOGS_COIN = LifeMoney.getInstance().getConfig().getString("Database.table");
+        OPTIONS = LifeMoney.getInstance().getConfig().getString("Database.options");
         setupDataSource(plugin);
 
         try (Connection con = dataSource.getConnection();
@@ -57,11 +59,48 @@ public class DBCon {
                     "time BIGINT UNSIGNED" +
                     ");");
         }
+        ResultSet options = statement.executeQuery("SHOW TABLES LIKE '" + OPTIONS + "'");
+        if (!options.next()) {
+            statement.executeUpdate("CREATE TABLE IF NOT EXISTS " + OPTIONS + " (" +
+                    "uuid varchar(36) NOT NULL, " +
+                    "hide TINYINT(1) DEFAULT 1, " +
+                    "PRIMARY KEY (uuid));");
+        }
     }
 
     public static void close() {
         if (dataSource != null) {
             dataSource.close();
+        }
+    }
+
+    public static boolean isHide(@NotNull UUID uuid) {
+        try {
+            try (Connection con = dataSource.getConnection()) {
+                try (PreparedStatement state = con.prepareStatement("SELECT hide FROM " + OPTIONS + " WHERE uuid = ?;")) {
+                    state.setString(1, uuid.toString());
+                    ResultSet rs = state.executeQuery();
+                    if (!rs.next()) return false;
+                    return rs.getBoolean("hide");
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void setHide(@NotNull UUID uuid, boolean hide) {
+        try {
+            try (Connection con = dataSource.getConnection()) {
+                try (PreparedStatement state = con.prepareStatement("INSERT INTO " + OPTIONS + " VALUES (?, ?) ON DUPLICATE KEY UPDATE hide = ?;")) {
+                    state.setString(1, uuid.toString());
+                    state.setBoolean(2, hide);
+                    state.setBoolean(3, hide);
+                    state.executeUpdate();
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
     }
 

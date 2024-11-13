@@ -26,3 +26,12 @@ commands:
     aliases:
       - lmfg
       - lmfgive
+  lifemoneyslient:
+    permission: lifemoney.command.lifemoneyslient
+    aliases:
+      - lms
+      - lmsilent
+
+permissions:
+  lifemoney.command.lifemoneyslient:
+    default: true

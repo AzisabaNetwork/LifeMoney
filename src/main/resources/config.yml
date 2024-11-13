@@ -8,3 +8,4 @@ Database:
   username: username
   password: password
   table: coin_logging
+  options: coin_option

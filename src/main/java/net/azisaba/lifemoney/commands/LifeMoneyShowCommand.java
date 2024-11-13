@@ -16,6 +16,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -85,12 +86,15 @@ public class LifeMoneyShowCommand implements TabExecutor {
         long finalTime = time;
         AtomicReference<List<CoinLog>> list = new AtomicReference<>(new ArrayList<>());
         if (uuid != null) {
+
+            AtomicBoolean end = new AtomicBoolean(false);
             long epochSecond = Instant.now().getEpochSecond();
             if (money != null) {
                 list.set(new ArrayList<>(Collections.singleton(new CoinLog(money, 0D, epochSecond))));
                 LifeMoney.getInstance().runAsyncDelayed(() -> {
                     list.set(new DBCon().getLogsCoin(finalUuid, list.get(), epochSecond, finalTime));
                     list.set(merge(list.get()));
+                    end.set(true);
                     message(commandSender, list.get(), finalUuid);
                 }, 1);
                 return true;
@@ -99,10 +103,15 @@ public class LifeMoneyShowCommand implements TabExecutor {
                 LifeMoney.getInstance().runAsyncDelayed(() -> {
                     list.set(new DBCon().getLogsCoin(finalUuid, list.get(), epochSecond, finalTime));
                     list.set(merge(list.get()));
+                    end.set(true);
                     message(commandSender, list.get(), finalUuid);
                 }, 1);
-
             }
+            LifeMoney.getInstance().runAsyncDelayed(()-> {
+                if (end.get()) return;
+                finish(commandSender, "§cデータがありません。");
+            }, 100);
+
         } else {
             Moneys finalMoney = money;
             LifeMoney.getInstance().runAsync(() -> {
@@ -155,6 +164,10 @@ public class LifeMoneyShowCommand implements TabExecutor {
     }
 
     private void message(CommandSender sender, @NotNull List<CoinLog> list, UUID uuid) {
+        if (list.isEmpty()) {
+            finish(sender, "§cデータがありません。");
+            return;
+        }
         list.forEach(it -> {
             OfflinePlayer p = Bukkit.getOfflinePlayer(uuid);
             String name = p.getName() == null ? "§a§l" + p.getUniqueId() + "§fの金額詳細ログ: " :  "§a§l" + p.getName() + "§fの金額詳細ログ: ";

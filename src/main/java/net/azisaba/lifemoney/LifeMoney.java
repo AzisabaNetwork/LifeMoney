@@ -3,6 +3,7 @@ package net.azisaba.lifemoney;
 import net.azisaba.lifemoney.commands.LifeMoneyForceGiveCommand;
 import net.azisaba.lifemoney.commands.LifeMoneyGiveCommand;
 import net.azisaba.lifemoney.commands.LifeMoneyShowCommand;
+import net.azisaba.lifemoney.commands.LifeMoneySilentCommand;
 import net.azisaba.lifemoney.database.DBCon;
 import net.azisaba.lifemoney.listener.FarmBlockListener;
 import net.azisaba.lifemoney.listener.MineBlockListener;
@@ -28,7 +29,7 @@ public final class LifeMoney extends JavaPlugin implements Task {
     public void onEnable() {
         saveDefaultConfig();
         coinTimer = new CoinLogTimer(this);
-        coinTimer.start(600);
+        coinTimer.start(60); //300 = 5分。秒数
 
         if (isEconomy()) {
             RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
@@ -60,6 +61,7 @@ public final class LifeMoney extends JavaPlugin implements Task {
         Objects.requireNonNull(getCommand("lifemoneygive")).setExecutor(new LifeMoneyGiveCommand());
         Objects.requireNonNull(getCommand("lifemoneyshow")).setExecutor(new LifeMoneyShowCommand());
         Objects.requireNonNull(getCommand("lifemoneyforcegive")).setExecutor(new LifeMoneyForceGiveCommand());
+        Objects.requireNonNull(getCommand("lifemoneyslient")).setExecutor(new LifeMoneySilentCommand());
     }
 
     public boolean isMythic() {

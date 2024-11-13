@@ -4,6 +4,7 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import net.azisaba.lifemoney.LifeMoney;
+import net.azisaba.lifemoney.commands.LifeMoneySilentCommand;
 import net.azisaba.lifemoney.database.DBCon;
 import net.azisaba.lifemoney.money.Moneys;
 import net.kyori.adventure.text.Component;
@@ -41,7 +42,12 @@ public final class CoinLogTimer implements ICoinLogTimer {
                     Player p = Bukkit.getPlayer(uuid);
                     if (p == null) return;
 
-                    p.sendMessage(Component.text(getTimer(time) +"の間に §e§l<COIN>LM §fを獲得しました。".replaceAll("<COIN>", num.format(total))));
+                    if (LifeMoneySilentCommand.isSet(uuid)) {
+                        p.sendMessage(Component.text(getTimer(time) +"の間に §e§l<COIN>LM §fを獲得しました。".replaceAll("<COIN>", num.format(total))));
+                    } else {
+                        p.sendActionBar(Component.text(getTimer(time) + "の間に §e§l<COIN>LM §fを獲得しました。".replaceAll("<COIN>", num.format(total))));
+                    }
+                    plugin.getLogger().info(getTimer(time) +"の間に <COIN>LM を獲得しました。".replaceAll("<COIN>", num.format(total)));
                 }, delay);
                 delay++;
             }
