@@ -155,10 +155,6 @@ public class LifeMoneyShowCommand implements TabExecutor {
     }
 
     private void message(CommandSender sender, @NotNull List<CoinLog> list, UUID uuid) {
-        if (list.isEmpty()) {
-            finish(sender, "§cデータがありません。");
-            return;
-        }
         list.forEach(it -> {
             OfflinePlayer p = Bukkit.getOfflinePlayer(uuid);
             String name = p.getName() == null ? "§a§l" + p.getUniqueId() + "§fの金額詳細ログ: " :  "§a§l" + p.getName() + "§fの金額詳細ログ: ";
