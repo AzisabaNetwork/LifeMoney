@@ -77,7 +77,7 @@ public class MineBlockListener implements Listener {
             return worlds;
         }
 
-            private int CHANCE = 5; //5%
+            private int CHANCE = 10; //5%
 
         @Override
         public int chance() {return CHANCE;}

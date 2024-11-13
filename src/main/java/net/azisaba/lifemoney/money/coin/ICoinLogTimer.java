@@ -7,7 +7,7 @@ import java.util.UUID;
 
 public interface ICoinLogTimer {
 
-    void start();
+    void start(long timer);
 
     Multimap<UUID, CoinLog> getCoinData();
 

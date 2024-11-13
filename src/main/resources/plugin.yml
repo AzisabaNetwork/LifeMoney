@@ -1,5 +1,5 @@
 name: LifeMoney
-version: '1.1.0'
+version: '1.2.0'
 main: net.azisaba.lifemoney.LifeMoney
 api-version: '1.21'
 authors: [ MCLove32 ]
@@ -16,3 +16,13 @@ commands:
     aliases:
       - lmg
       - lmgive
+  lifemoneyshow:
+    permission: lifemoney.command.lifemoneyshow
+    aliases:
+      - lms
+      - lmshow
+  lifemoneyforcegive:
+    permission: lifemoney.command.lifemoneyforcegive
+    aliases:
+      - lmfg
+      - lmfgive

@@ -12,6 +12,7 @@ import java.util.*;
 
 @SuppressWarnings("SqlNoDataSourceInspection")
 public class DBCon {
+
     protected static HikariDataSource dataSource;
     protected static String LOGS_COIN;
 
@@ -53,7 +54,7 @@ public class DBCon {
                     "uuid varchar(36) NOT NULL, " +
                     "type varchar(32) NOT NULL, " +
                     "money BIGINT UNSIGNED, " +
-                    "PRIMARY KEY (uuid, type)" +
+                    "time BIGINT UNSIGNED" +
                     ");");
         }
     }
@@ -64,19 +65,16 @@ public class DBCon {
         }
     }
 
-    public double setLogsCoin(@NotNull UUID uuid, List<CoinLog> logList) {
-        List<CoinLog> logList2 = getLogsCoin(uuid, logList, true);
-        clearLogsCoin(uuid);
+    public double setLogsCoin(@NotNull UUID uuid, @NotNull List<CoinLog> logList) {
         try {
             try (Connection con = dataSource.getConnection()) {
                 double total = 0;
-                for (CoinLog log : logList2) {
-                    try (PreparedStatement state = con.prepareStatement("INSERT INTO " + LOGS_COIN + " VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE type = ?, money = ?;")) {
+                for (CoinLog log : logList) {
+                    try (PreparedStatement state = con.prepareStatement("INSERT INTO " + LOGS_COIN + " VALUES (?, ?, ?, ?);")) {
                         state.setString(1, uuid.toString());
                         state.setString(2, log.moneys().name());
                         state.setDouble(3, log.coin());
-                        state.setString(4, log.moneys().name());
-                        state.setDouble(5, log.coin());
+                        state.setLong(4, log.time());
                         state.executeUpdate();
                         total += log.coin();
                     }
@@ -88,29 +86,48 @@ public class DBCon {
         }
     }
 
-    public List<CoinLog> getLogsCoin(@NotNull UUID uuid, List<CoinLog> logList, boolean isUpdate) {
+    public Set<UUID> getUUIDs() {
+        try {
+            try (Connection con = dataSource.getConnection()) {
+                try (PreparedStatement state = con.prepareStatement("SELECT uuid FROM " + LOGS_COIN + ";")) {
+                    state.executeQuery();
+                    ResultSet rs = state.getResultSet();
+                    Set<UUID> uuids = new HashSet<>();
+                    while (rs.next()) {
+                        uuids.add(UUID.fromString(rs.getString("uuid")));
+                    }
+                    return uuids;
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public List<CoinLog> getLogsCoin(@NotNull UUID uuid, List<CoinLog> logList, long timeCondition, long range) {
         try {
             try (Connection con = dataSource.getConnection()) {
                 try (PreparedStatement state = con.prepareStatement("SELECT * FROM " + LOGS_COIN + " WHERE uuid = ?;")) {
                     state.setString(1, uuid.toString());
                     ResultSet rs = state.executeQuery();
+
+                    List<CoinLog> list = new ArrayList<>();
                     while (rs.next()) {
                         String type = rs.getString("type");
                         double coin = rs.getDouble("money");
+                        long time = rs.getLong("time");
 
-                        if (isUpdate) {
-                            for (CoinLog log : logList) {
-                                if (log.moneys() == Moneys.getFromName(type)) {
-                                    coin+= log.coin();
-                                    break;
-                                }
+                        logList.forEach(it -> {
+                            if (it.moneys() != Moneys.getFromName(type)) return;
+                            if (range != -1) {
+                                if (timeCondition - time > range) return;
                             }
-                        }
-                        logList.add(new CoinLog(Moneys.getFromName(type), coin));
+                            list.add(new CoinLog(Moneys.getFromName(type), coin, time));
+                        });
                     }
+                    return list;
                 }
             }
-            return logList;
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }

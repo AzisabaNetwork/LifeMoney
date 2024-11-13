@@ -15,11 +15,11 @@ import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.List;
 
-public class LifeMoneyGiveCommand implements TabExecutor {
+public class LifeMoneyForceGiveCommand implements TabExecutor {
 
     @Override
     public boolean onCommand(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String s, @NotNull String[] strings) {
-        if (strings.length < 3) return finish(commandSender,"§c/lmg <player> <amount> <money-type> [-s <true|false>]");
+        if (strings.length < 3) return finish(commandSender,"§c/lmfg <player> <amount> <money-type> [-s <true|false>]");
         Player p = Bukkit.getPlayer(strings[0]);
         if (p == null) return finish(commandSender, "§cそのプレイヤーは存在しません。");
 
@@ -37,7 +37,7 @@ public class LifeMoneyGiveCommand implements TabExecutor {
         } catch (IllegalArgumentException e) {
             return finish(commandSender, "§c無効な<money-type>です。");
         }
-        Coin.addCoin(p.getUniqueId(), money, amount);
+        Coin.addCoinForce(p.getUniqueId(), money, amount);
         if (strings.length != 4 || !strings[2].equalsIgnoreCase("-s") || !strings[3].equalsIgnoreCase("true")) {
             NumberFormat num = NumberFormat.getInstance();
             num.setMaximumFractionDigits(2);

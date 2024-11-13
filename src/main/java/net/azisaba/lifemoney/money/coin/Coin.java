@@ -24,11 +24,29 @@ public class Coin {
         }
     }
 
+    public static void addCoinForce(UUID uuid, Moneys money, double amount) {
+        Economy economy = economyProcessForce(uuid, money, amount);
+        if (economy != null) {
+            economy.depositPlayer(Bukkit.getOfflinePlayer(uuid), amount);
+        }
+    }
+
     @Nullable
     private static Economy economyProcess(UUID uuid, Moneys money, double amount) {
         if (isEnabled()) {
             if (amount <= 0) return null;
             LifeMoney.getInstance().getCoinTimer().addCoin(uuid, money, amount);
+
+            return LifeMoney.getInstance().getEconomy();
+        }
+        return null;
+    }
+
+    @Nullable
+    private static Economy economyProcessForce(UUID uuid, Moneys money, double amount) {
+        if (isEnabled()) {
+            if (amount <= 0) return null;
+            LifeMoney.getInstance().getCoinTimer().addCoinForce(uuid, money, amount);
 
             return LifeMoney.getInstance().getEconomy();
         }

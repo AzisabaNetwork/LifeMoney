@@ -32,7 +32,7 @@ public class WoodCutBlockListener implements Listener {
 
     public static class Break extends WoodCutBlockListener implements MoneyBlocks, Chance, Worlds {
 
-        private int CHANCE = 50;
+        private int CHANCE = 75;
 
         @Override
         public int chance() {return CHANCE;}

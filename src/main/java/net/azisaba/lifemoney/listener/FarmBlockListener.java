@@ -34,7 +34,7 @@ public class FarmBlockListener implements Listener {
 
     public static class Break extends FarmBlockListener implements MoneyBlocks, Chance, Worlds {
 
-        private int CHANCE = 10;
+        private int CHANCE = 50;
 
         @Override
         public int chance() {

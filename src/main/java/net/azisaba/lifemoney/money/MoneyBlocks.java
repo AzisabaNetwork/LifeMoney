@@ -27,7 +27,7 @@ public interface MoneyBlocks {
     }
 
     default void sound(@NotNull Player p) {
-        p.playSound(p, Sound.BLOCK_NOTE_BLOCK_PLING, 2F ,1.189207F);
+        p.playSound(p, Sound.BLOCK_NOTE_BLOCK_PLING, 2F ,0.5F);
     }
 
     void drop(@NotNull Player p);
