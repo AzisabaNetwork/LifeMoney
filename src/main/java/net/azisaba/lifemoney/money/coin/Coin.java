@@ -31,6 +31,13 @@ public class Coin {
         }
     }
 
+    public static void addCoinLog(UUID uuid, Moneys money, double amount) {
+        if (isEnabled()) {
+            if (amount <= 0) return;
+            LifeMoney.getInstance().getCoinTimer().addCoin(uuid, money, amount);
+        }
+    }
+
     @Nullable
     private static Economy economyProcess(UUID uuid, Moneys money, double amount) {
         if (isEnabled()) {
