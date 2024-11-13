@@ -41,7 +41,7 @@ public final class CoinLogTimer implements ICoinLogTimer {
                     Player p = Bukkit.getPlayer(uuid);
                     if (p == null) return;
 
-                    p.sendMessage(Component.text(getTimer(time) +"の間に §e§l<COIN>コイン §fを獲得しました。".replaceAll("<COIN>", num.format(total))));
+                    p.sendMessage(Component.text(getTimer(time) +"の間に §e§l<COIN>LM §fを獲得しました。".replaceAll("<COIN>", num.format(total))));
                 }, delay);
                 delay++;
             }
@@ -126,7 +126,7 @@ public final class CoinLogTimer implements ICoinLogTimer {
             double coin = new DBCon().setLogsCoin(uuid, new ArrayList<>(Collections.singleton(new CoinLog(money, amount, epochSecond))));
             Player p = Bukkit.getPlayer(uuid);
             if (p == null) return;
-            p.sendMessage(Component.text("§b§l"+ coin + "コイン§fがアカウントに追加されました。"));
+            p.sendMessage(Component.text("§b§l"+ coin + "LM §fがアカウントに追加されました。"));
         });
 
     }

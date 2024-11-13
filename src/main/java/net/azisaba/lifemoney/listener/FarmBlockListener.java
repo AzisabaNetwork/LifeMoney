@@ -34,7 +34,7 @@ public class FarmBlockListener implements Listener {
 
     public static class Break extends FarmBlockListener implements MoneyBlocks, Chance, Worlds {
 
-        private int CHANCE = 50;
+        private int CHANCE = 35; // 35%
 
         @Override
         public int chance() {
@@ -44,11 +44,6 @@ public class FarmBlockListener implements Listener {
         @Override
         public void setChance(int chance) {
             CHANCE = chance;
-        }
-
-        @Override
-        public void drop(@NotNull Player p) {
-            sound(p);
         }
 
         @Override
@@ -98,7 +93,7 @@ public class FarmBlockListener implements Listener {
 
         @Override
         public boolean isValidWorldAndBlockType(String worldName, Material blockType) {
-            return getEnabledWorlds().contains(worldName) && getMineBlocks().contains(blockType);
+            return getEnabledWorlds().contains(worldName) && getFarmBlocks().contains(blockType);
         }
 
         @Override
@@ -108,7 +103,6 @@ public class FarmBlockListener implements Listener {
 
         @Override
         public void rewardPlayer(Player player, Material blockType) {
-            drop(player);
             double coinAmount = getCoinByMaterial(0, blockType);
             Coin.addCoin(player.getUniqueId(), Moneys.FARM, coinAmount);
         }

@@ -17,6 +17,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.plugin.PluginManager;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -32,18 +33,13 @@ public class WoodCutBlockListener implements Listener {
 
     public static class Break extends WoodCutBlockListener implements MoneyBlocks, Chance, Worlds {
 
-        private int CHANCE = 75;
+        private int CHANCE = 35; //35%
 
         @Override
         public int chance() {return CHANCE;}
 
         @Override
         public void setChance(int chance) {CHANCE = chance;}
-
-        @Override
-        public void drop(@NotNull Player p) {
-            sound(p);
-        }
 
         @Override
         public Set<String> getEnabledWorlds() {
@@ -74,7 +70,7 @@ public class WoodCutBlockListener implements Listener {
 
         @Override
         public boolean isValidWorldAndBlockType(String worldName, Material blockType) {
-            return getEnabledWorlds().contains(worldName) && getMineBlocks().contains(blockType);
+            return getEnabledWorlds().contains(worldName) && getWoodcutBlocks().contains(blockType);
         }
 
         @Override
@@ -83,55 +79,44 @@ public class WoodCutBlockListener implements Listener {
         }
 
         @Override
-        public void rewardPlayer(Player player, Material blockType) {
-            drop(player);
+        public void rewardPlayer(@NotNull Player player, Material blockType) {
             double coinAmount = getCoinByMaterial(5, blockType);
             Coin.addCoin(player.getUniqueId(), Moneys.WOODCUT, coinAmount);
         }
 
         @Override
         public Set<Material> getWoodcutBlocks() {
-            return new HashSet<>(Tag.MINEABLE_AXE.getValues());
+            return new HashSet<>(Tag.LOGS.getValues());
         }
 
-        private enum MaterialCoinOffset {
-            BIRCH_LOG(3.5, 4),
-            DARK_OAK_LOG(2.0, 3),
-            JUNGLE_OAK_LOG(3.0, 3, Material.JUNGLE_LOG, Material.OAK_LOG),
-            SPRUCE_LOG(1.0, 3),
-            WARPED_CRIMSON_STEM(1.5, 3, Material.WARPED_STEM, Material.CRIMSON_STEM),
-            DEFAULT(1.0, 2);
+        public record MaterialCoinOffset(double base, int range) {}
 
-            private final double base;
-            private final int range;
-            private final Set<Material> materials;
+        private static final Map<Tag<Material>, MaterialCoinOffset> MATERIAL_OFFSETS = Map.of(
+                Tag.ACACIA_LOGS, new MaterialCoinOffset(4, 3),
+                Tag.BIRCH_LOGS, new MaterialCoinOffset(3.5, 4),
+                Tag.DARK_OAK_LOGS, new MaterialCoinOffset(2, 3),
+                Tag.JUNGLE_LOGS, new MaterialCoinOffset(3, 3),
+                Tag.OAK_LOGS, new MaterialCoinOffset(3, 3),
+                Tag.SPRUCE_LOGS, new MaterialCoinOffset(1, 3),
+                Tag.CRIMSON_STEMS, new MaterialCoinOffset(1.5, 3),
+                Tag.WARPED_STEMS, new MaterialCoinOffset(1.5, 3)
+        );
 
-            MaterialCoinOffset(double base, int range, @NotNull Material... materials) {
-                this.base = base;
-                this.range = range;
-                this.materials = materials.length == 0 ? Set.of(Material.valueOf(name())) : Set.of(materials);
+        @NotNull
+        @Contract("_ -> new")
+        public static MaterialCoinOffset fromMaterial(Material material) {
+            for (Map.Entry<Tag<Material>, MaterialCoinOffset> entry : MATERIAL_OFFSETS.entrySet()) {
+                if (entry.getKey().isTagged(material)) {
+                    return entry.getValue();
+                }
             }
-
-            public double getBase() {
-                return base;
-            }
-
-            public int getRange() {
-                return range;
-            }
-
-            public static MaterialCoinOffset fromMaterial(Material material) {
-                return Arrays.stream(values())
-                        .filter(offset -> offset.materials.contains(material))
-                        .findFirst()
-                        .orElse(DEFAULT);
-            }
+            return new MaterialCoinOffset(1, 1);
         }
 
         @Override
         public double getCoinByMaterial(double offSet, @NotNull Material m) {
-            MaterialCoinOffset offset = MaterialCoinOffset.fromMaterial(m);
-            return random.nextDouble(offset.getRange()) + offset.getBase();
+            MaterialCoinOffset offset = fromMaterial(m);
+            return random.nextDouble(offset.range()) + offset.base();
         }
     }
 }

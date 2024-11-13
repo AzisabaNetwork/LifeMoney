@@ -40,11 +40,6 @@ public class MineBlockListener implements Listener {
             return collectMineBlocks();
         }
 
-        @Override
-        public void drop(@NotNull Player p) {
-            sound(p);
-        }
-
         @NotNull
         private Set<Material> collectMineBlocks() {
             Set<Material> materials = new HashSet<>();
@@ -77,7 +72,7 @@ public class MineBlockListener implements Listener {
             return worlds;
         }
 
-            private int CHANCE = 10; //5%
+            private int CHANCE = 5; //8%
 
         @Override
         public int chance() {return CHANCE;}
@@ -108,8 +103,7 @@ public class MineBlockListener implements Listener {
         }
 
         @Override
-        public void rewardPlayer(Player player, Material blockType) {
-            drop(player);
+        public void rewardPlayer(@NotNull Player player, Material blockType) {
             double coinAmount = getCoinByMaterial(1, blockType);
             Coin.addCoin(player.getUniqueId(), Moneys.MINE, coinAmount);
         }
@@ -126,7 +120,7 @@ public class MineBlockListener implements Listener {
             offSet = applyOffset(offSet, material, Tag.LAPIS_ORES, 10, 25);
             offSet = applyOffset(offSet, material, Tag.REDSTONE_ORES, 10, 15);
             offSet = applyOffset(offSet, material, Tag.COPPER_ORES, 10, 5);
-            offSet = applyOffset(offSet, material, Tag.MINEABLE_SHOVEL, 3, 1.5);
+            offSet = applyOffset(offSet, material, Tag.MINEABLE_SHOVEL, 10, 3);
             return offSet;
         }
 
