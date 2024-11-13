@@ -1,5 +1,6 @@
 package net.azisaba.lifemoney;
 
+import net.azisaba.lifemoney.commands.LifeMoneyGiveCommand;
 import net.azisaba.lifemoney.database.DBCon;
 import net.azisaba.lifemoney.listener.FarmBlockListener;
 import net.azisaba.lifemoney.listener.MineBlockListener;
@@ -11,6 +12,8 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.Objects;
 
 public final class LifeMoney extends JavaPlugin implements Task {
 
@@ -32,6 +35,8 @@ public final class LifeMoney extends JavaPlugin implements Task {
 
         registerDatabase();
         registerListeners();
+        registerCommands();
+
     }
 
     @Override
@@ -47,6 +52,10 @@ public final class LifeMoney extends JavaPlugin implements Task {
         new MineBlockListener().initialize(this);
         new WoodCutBlockListener().initialize(this);
         new FarmBlockListener().initialize(this);
+    }
+
+    private void registerCommands() {
+        Objects.requireNonNull(getCommand("lifemoneygive")).setExecutor(new LifeMoneyGiveCommand());
     }
 
     public boolean isMythic() {
