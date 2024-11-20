@@ -20,7 +20,6 @@ import java.util.Objects;
 
 public final class LifeMoney extends JavaPlugin implements Task {
 
-
     private CoinLogTimer coinTimer;
 
     private Economy economy;
@@ -44,6 +43,7 @@ public final class LifeMoney extends JavaPlugin implements Task {
 
     @Override
     public void onDisable() {
+        CoinLogTimer.stop();
         DBCon.close();
     }
 

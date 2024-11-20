@@ -47,12 +47,18 @@ public final class CoinLogTimer implements ICoinLogTimer {
                     } else {
                         p.sendActionBar(Component.text(getTimer(time) + "の間に §e§l<COIN>LM §fを獲得しました。".replaceAll("<COIN>", num.format(total))));
                     }
-                    plugin.getLogger().info(getTimer(time) +"の間に <COIN>LM を獲得しました。".replaceAll("<COIN>", num.format(total)));
                 }, delay);
                 delay++;
             }
 
         }, time * 20, time * 20);
+    }
+
+    public static void stop() {
+        Set<UUID> copy = coinData.keySet();
+        for (UUID uuid : copy) {
+            double total = new DBCon().setLogsCoin(uuid, new ArrayList<>(coinData.get(uuid).stream().toList()));
+        }
     }
 
     private String getTimer(long time) {

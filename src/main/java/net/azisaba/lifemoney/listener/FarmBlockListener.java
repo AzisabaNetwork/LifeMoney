@@ -51,11 +51,11 @@ public class FarmBlockListener implements Listener {
             double baseAmount;
             int range;
             if (Tag.MAINTAINS_FARMLAND.isTagged(m)) {
-                baseAmount = 0.5;
-                range = 3;
+                baseAmount = 0.5 * getMultiplier();
+                range = 3 * getMultiplier();
             } else {
-                baseAmount = 0.25;
-                range = 2;
+                baseAmount = 0.25  * getMultiplier();
+                range = 2  * getMultiplier();
             }
             return calculateCoinAmount(baseAmount, range);
         }

@@ -13,13 +13,11 @@ repositories {
     maven("https://repo.papermc.io/repository/maven-public/")
     maven("https://oss.sonatype.org/content/groups/public/")
     maven("https://repo.maven.apache.org/maven2/")
-    maven("https://mvn.lumine.io/repository/maven-public/")
     maven("https://jitpack.io" )
 }
 
 dependencies {
     compileOnly(libs.io.papermc.paper.paper.api)
-    compileOnly("io.lumine:Mythic-Dist:5.7.2")
     compileOnly("com.github.MilkBowl:VaultAPI:1.7.1")
     implementation("com.zaxxer:HikariCP:6.0.0")
 }

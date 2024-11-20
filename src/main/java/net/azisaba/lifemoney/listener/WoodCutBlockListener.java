@@ -17,7 +17,6 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.plugin.PluginManager;
-import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -91,32 +90,24 @@ public class WoodCutBlockListener implements Listener {
 
         public record MaterialCoinOffset(double base, int range) {}
 
-        private static final Map<Tag<Material>, MaterialCoinOffset> MATERIAL_OFFSETS = Map.of(
-                Tag.ACACIA_LOGS, new MaterialCoinOffset(4, 3),
-                Tag.BIRCH_LOGS, new MaterialCoinOffset(3.5, 4),
-                Tag.DARK_OAK_LOGS, new MaterialCoinOffset(2, 3),
-                Tag.JUNGLE_LOGS, new MaterialCoinOffset(3, 3),
-                Tag.OAK_LOGS, new MaterialCoinOffset(3, 3),
-                Tag.SPRUCE_LOGS, new MaterialCoinOffset(1, 3),
-                Tag.CRIMSON_STEMS, new MaterialCoinOffset(1.5, 3),
-                Tag.WARPED_STEMS, new MaterialCoinOffset(1.5, 3)
-        );
-
-        @NotNull
-        @Contract("_ -> new")
-        public static MaterialCoinOffset fromMaterial(Material material) {
-            for (Map.Entry<Tag<Material>, MaterialCoinOffset> entry : MATERIAL_OFFSETS.entrySet()) {
-                if (entry.getKey().isTagged(material)) {
-                    return entry.getValue();
-                }
+        private double applyOffset(double currentOffset, Material material, @NotNull Tag<Material> tag, double randomRange, double baseValue) {
+            if (tag.isTagged(material)) {
+                currentOffset += random.nextDouble() * randomRange + baseValue;
             }
-            return new MaterialCoinOffset(1, 1);
+            return currentOffset;
         }
 
         @Override
-        public double getCoinByMaterial(double offSet, @NotNull Material m) {
-            MaterialCoinOffset offset = fromMaterial(m);
-            return random.nextDouble(offset.range()) + offset.base();
+        public double getCoinByMaterial(double offSet, Material material) {
+            offSet = applyOffset(offSet, material, Tag.ACACIA_LOGS, 5  * getMultiplier(), 7.5 * getMultiplier());
+            offSet = applyOffset(offSet, material, Tag.BIRCH_LOGS, 3.5 * getMultiplier(), 5 * getMultiplier());
+            offSet = applyOffset(offSet, material, Tag.DARK_OAK_LOGS, 2 * getMultiplier(), 5 * getMultiplier());
+            offSet = applyOffset(offSet, material, Tag.JUNGLE_LOGS, 3 * getMultiplier(), 4 * getMultiplier());
+            offSet = applyOffset(offSet, material,  Tag.OAK_LOGS, 3 * getMultiplier(), 4 * getMultiplier());
+            offSet = applyOffset(offSet, material, Tag.SPRUCE_LOGS, getMultiplier(), 3 * getMultiplier());
+            offSet = applyOffset(offSet, material,  Tag.CRIMSON_STEMS, 1.5 * getMultiplier(), 5 * getMultiplier());
+            offSet = applyOffset(offSet, material,  Tag.WARPED_STEMS, 1.5 * getMultiplier(), 5 * getMultiplier());
+            return offSet;
         }
     }
 }

@@ -24,4 +24,8 @@ public interface MoneyBlocks {
     }
 
     double getCoinByMaterial(double offSet, Material m);
+
+    default int getMultiplier() {
+        return 50;
+    }
 }

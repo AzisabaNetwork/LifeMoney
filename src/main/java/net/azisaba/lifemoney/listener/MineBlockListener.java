@@ -110,17 +110,21 @@ public class MineBlockListener implements Listener {
 
         @Override
         public double getCoinByMaterial(double offSet, Material material) {
-            offSet = applyOffset(offSet, material, Tag.STONE_ORE_REPLACEABLES, 5, 5);
-            offSet = applyOffset(offSet, material, Tag.DEEPSLATE_ORE_REPLACEABLES, 5, 8);
-            offSet = applyOffset(offSet, material, Tag.COAL_ORES, 10, 10);
-            offSet = applyOffset(offSet, material, Tag.IRON_ORES, 10, 20);
-            offSet = applyOffset(offSet, material, Tag.GOLD_ORES, 10, 30);
-            offSet = applyOffset(offSet, material, Tag.DIAMOND_ORES, 10, 50);
-            offSet = applyOffset(offSet, material, Tag.EMERALD_ORES, 10, 100);
-            offSet = applyOffset(offSet, material, Tag.LAPIS_ORES, 10, 25);
-            offSet = applyOffset(offSet, material, Tag.REDSTONE_ORES, 10, 15);
-            offSet = applyOffset(offSet, material, Tag.COPPER_ORES, 10, 5);
-            offSet = applyOffset(offSet, material, Tag.MINEABLE_SHOVEL, 10, 3);
+            offSet = applyOffset(offSet, material, Tag.STONE_ORE_REPLACEABLES, 5  * getMultiplier(), 5 * getMultiplier());
+            offSet = applyOffset(offSet, material, Tag.DEEPSLATE_ORE_REPLACEABLES, 8 * getMultiplier(), 10 * getMultiplier());
+            offSet = applyOffset(offSet, material, Tag.COAL_ORES, 10 * getMultiplier(), 10 * getMultiplier());
+            offSet = applyOffset(offSet, material, Tag.IRON_ORES, 10 * getMultiplier(), 20 * getMultiplier());
+            offSet = applyOffset(offSet, material, Tag.GOLD_ORES, 10 * getMultiplier(), 30 * getMultiplier());
+            offSet = applyOffset(offSet, material, Tag.DIAMOND_ORES, 10 * getMultiplier(), 50 * getMultiplier());
+            offSet = applyOffset(offSet, material, Tag.EMERALD_ORES, 10 * getMultiplier(), 100 * getMultiplier());
+            offSet = applyOffset(offSet, material, Tag.LAPIS_ORES, 10 * getMultiplier(), 25 * getMultiplier());
+            offSet = applyOffset(offSet, material, Tag.REDSTONE_ORES, 10 * getMultiplier(), 15 * getMultiplier());
+            offSet = applyOffset(offSet, material, Tag.COPPER_ORES, 10 * getMultiplier(), 5 * getMultiplier());
+            offSet = applyOffset(offSet, material, Tag.MINEABLE_SHOVEL, 20 * getMultiplier(), 10 * getMultiplier());
+            offSet = applyOffset(offSet, material, Tag.BASE_STONE_NETHER, 3 * getMultiplier(), 5 * getMultiplier());
+            offSet = applyOffset(offSet, material, Tag.BASE_STONE_OVERWORLD, 3 * getMultiplier(), 2 * getMultiplier());
+            offSet = applyOffset(offSet, material, Tag.MINEABLE_PICKAXE, getMultiplier() * 3, 2 * getMultiplier());
+
             return offSet;
         }
 

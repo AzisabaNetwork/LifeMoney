@@ -7,8 +7,6 @@ description: LifeNewPvEの通貨の中枢。
 
 depend:
   - Vault
-softdepend:
-  - MythicMobs
 
 commands:
   lifemoneygive:
